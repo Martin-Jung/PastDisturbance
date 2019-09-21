@@ -1,0 +1,62 @@
+R version 3.6.0 (2019-04-26)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 18362)
+
+Matrix products: default
+
+locale:
+  [1] LC_COLLATE=English_United Kingdom.1252  LC_CTYPE=English_United Kingdom.1252   
+[3] LC_MONETARY=English_United Kingdom.1252 LC_NUMERIC=C                           
+[5] LC_TIME=English_United Kingdom.1252    
+
+attached base packages:
+  [1] grid      stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+  [1] broom_0.5.2        stlplus_0.5.1      strucchange_1.5-1  sandwich_2.5-1     TSdist_3.6         proxy_0.4-23      
+[7] gridExtra_2.3      viridis_0.5.1      viridisLite_0.3.0  ggsci_2.9          ggthemes_4.2.0     scales_1.0.0      
+[13] extrafont_0.17     pbkrtest_0.4-7     coda_0.19-3        effects_4.1-1      carData_3.0-2      MuMIn_1.43.6      
+[19] purrr_0.3.2        readr_1.3.1        tibble_2.1.3       tidyverse_1.2.1    forcats_0.4.0      progress_1.2.2    
+[25] imputeTS_3.0       bfast_1.5.7        xts_0.11-2         zoo_1.8-6          jsonlite_1.6       rgeos_0.5-1       
+[31] gstat_2.0-2        roquefort_0.1-2    spdep_1.1-2        sf_0.7-7           spData_0.3.0       influence.ME_0.9-9
+[37] mgcv_1.8-28        nlme_3.1-139       yarg_0.1-14        wordcloud_2.6      tidyr_0.8.3        lubridate_1.7.4   
+[43] stringr_1.4.0      reshape2_1.4.3     dplyr_0.8.3        geiger_2.0.6.2     ape_5.3            raster_3.0-2      
+[49] rgdal_1.4-4        sp_1.3-1           geosphere_1.5-10   RColorBrewer_1.1-2 plotrix_3.7-6      Hmisc_4.2-0       
+[55] ggplot2_3.2.1      Formula_1.2-3      survival_2.44-1.1  lattice_0.20-38    arm_1.10-1         MASS_7.3-51.4     
+[61] lme4_1.1-21        Matrix_1.2-17     
+
+loaded via a namespace (and not attached):
+  [1] tidyselect_0.2.5        htmlwidgets_1.3         munsell_0.5.0           codetools_0.2-16       
+[5] units_0.6-3             miniUI_0.1.1.1          misc3d_0.8-4            withr_2.1.2            
+[9] colorspace_1.4-1        longitudinalData_2.4.1  knitr_1.23              rstudioapi_0.10        
+[13] stats4_3.6.0            dtw_1.20-1              Rttf2pt1_1.3.7          TTR_0.23-4             
+[17] emmeans_1.3.5           mnormt_1.5-5            glmmTMB_0.2.3           LearnBayes_2.15.1      
+[21] generics_0.0.2          TH.data_1.0-10          locpol_0.7-0            xfun_0.8               
+[25] R6_2.4.0                VGAM_1.1-1              manipulateWidget_0.10.0 assertthat_0.2.1       
+[29] promises_1.0.1          multcomp_1.4-10         nnet_7.3-12             forecast_8.7           
+[33] gtable_0.3.0            timeDate_3043.102       rlang_0.4.0             sjPlot_2.6.3           
+[37] splines_3.6.0           extrafontdb_1.0         TMB_1.7.15              lazyeval_0.2.2         
+[41] acepack_1.4.1           checkmate_1.9.4         rgl_0.100.26            abind_1.4-5            
+[45] modelr_0.1.4            unmarked_0.12-3         crosstalk_1.0.0         backports_1.1.4        
+[49] httpuv_1.5.1            quantmod_0.4-15         tools_3.6.0             stinepack_1.4          
+[53] psych_1.8.12            stargazer_5.2.2         splus2R_1.2-2           Rcpp_1.0.2             
+[57] plyr_1.8.4              base64enc_0.1-3         classInt_0.3-3          prettyunits_1.0.2      
+[61] rpart_4.1-15            deldir_0.1-21           fracdiff_1.4-2          deSolve_1.24           
+[65] haven_2.1.0             cluster_2.0.8           survey_3.36             magrittr_1.5           
+[69] data.table_1.12.2       lmerTest_3.1-0          spacetime_1.2-2         gmodels_2.18.1         
+[73] TSclust_1.2.4           lmtest_0.9-37           mvtnorm_1.0-11          packrat_0.5.0          
+[77] sjmisc_2.8.1            mime_0.7                hms_0.4.2               xtable_1.8-4           
+[81] sjstats_0.17.5          readxl_1.3.1            ggeffects_0.11.0        compiler_3.6.0         
+[85] KernSmooth_2.23-15      crayon_1.3.4            minqa_1.2.4             htmltools_0.3.6        
+[89] later_0.8.0             expm_0.999-4            DBI_1.0.0               sjlabelled_1.1.0       
+[93] subplex_1.5-4           boot_1.3-22             AICcmodavg_2.2-2        cli_1.1.0              
+[97] mitools_2.4             wmtsa_2.0-3             quadprog_1.5-7          gdata_2.18.0           
+[101] parallel_3.6.0          insight_0.4.1           ifultools_2.0-5         pkgconfig_2.0.2        
+[105] numDeriv_2016.8-1.1     foreign_0.8-71          signal_0.7-6            xml2_1.2.1             
+[109] yaImpute_1.0-31         webshot_0.5.1           clv_0.3-2.1             estimability_1.3       
+[113] rvest_0.3.4             digest_0.6.20           cellranger_1.1.0        intervals_0.15.1       
+[117] htmlTable_1.13.1        curl_4.0                shiny_1.3.2             gtools_3.8.1           
+[121] urca_1.3-0              nloptr_1.2.1            tseries_0.10-47         pillar_1.4.2           
+[125] httr_1.4.1              glue_1.3.1              bayestestR_0.2.5        FNN_1.1.3              
+[129] pdc_1.0.3               class_7.3-15            stringi_1.4.3           performance_0.2.0      
+[133] latticeExtra_0.6-28     e1071_1.7-2            
