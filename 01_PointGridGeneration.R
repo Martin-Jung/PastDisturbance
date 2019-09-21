@@ -34,6 +34,11 @@ sites <- SiteMetrics(diversity=r,
                                   "Ecoregion","Biome","Country","UN_subregion","Site_name","Order","Family",
                                   "Sampling_method","Study_common_taxon","Max_linear_extent","Coordinates_precision_metres"
                      ))
+
+# Calculate pairwise dissimilarity
+ss <- CompDissim2(r, metric="SorVeg",binary=T)
+saveRDS(ss,"resSaves/Out_MatricesSor.rds")
+
 # Calculate PIE
 r$Is_abundance <- "Abundance" == r$Diversity_metric_type
 site.abundance <- tapply(r$Is_abundance, r$SSS, unique)
