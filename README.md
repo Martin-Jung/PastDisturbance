@@ -19,13 +19,15 @@
 
 ## 3. Demo - Reproduce main figures
 
-- To reproduce all main figures in the manuscript, run the 05_Visualization script.
+- To reproduce all main figures in the manuscript, run the 06_Visualization script.
 
 The file **'resSaves/LS_EVI2FINAL_LEDAPS_NONGAPF_PolMean.rds'** containes the downloaded and prepared EVI time series. Note: These data were prepared on the 12th of January 2018. GEE does not maintain a track record of changes to their Landsat record. 
 
 The file **'resSaves/LS_EVI2_BFast_lm_BOUNDS_LEDAPS_SEASON.rds'** contains the calculated BFAST results as shown in script '03_LandsatPreperation'.
 
-The file **'resSaves/PREDICTS_allsites.rds'** contains the used subset of the PREDICTS database to reproduce the analysis and main figures.
+The file **'resSaves/PREDICTS_prepared_data.rds'** contains the used subset of the PREDICTS database to reproduce the analysis and main figures. **resSaves/Out_MatricesSor.rds** contains precomputed pairwise dissimilarities matrices.
+
+The file **'StudySiteIDs.csv'** contains the Source_IDs and Studyids of the data shown in the figures. Respective references can be queried from the [PREDICTS database](https://data.nhm.ac.uk/dataset/the-2016-release-of-the-predicts-database).
 
 ## 4. License 
 
