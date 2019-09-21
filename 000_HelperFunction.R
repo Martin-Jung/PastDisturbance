@@ -1355,16 +1355,12 @@ spatialLookup <- function(spp){
 waterFilter <- function(type="mode"){
   library(jsonlite);require(dplyr)
   if(type == "mode"){
-    wa <- fromJSON("extracts/PREDICTS_Permanentwater_mode.geojson.json",flatten=T)$features
+    wa <- fromJSON("resSaves/PREDICTS_Permanentwater_mode.geojson.json",flatten=T)$features
     wa <- wa %>% dplyr::select(properties.SS,properties.SSBS,properties.mode) %>% 
       dplyr::rename(SS = properties.SS, SSBS = properties.SSBS, WaterMode = properties.mode)
     return(wa)
   } else {
-    wa <- fromJSON("extracts/PREDICTS_Permanentwater.geojson.json",flatten=T)$features
-    wa <- wa %>% dplyr::select(properties.SS,properties.SSBS,properties.sum) %>% 
-      dplyr::rename(SS = properties.SS, SSBS = properties.SSBS, WaterSum = properties.sum)
-    # Multiply and calculate proportion
-    return(wa)
+    print('Not implemented!')
   }
 }
 
