@@ -1423,3 +1423,177 @@ CorrectSamplingEffort <- function(diversity){
 
 # SiteMetrics
 source('https://raw.githubusercontent.com/timnewbold/predicts-demo/master/predictsFunctions/R/SiteMetrics.R')
+
+
+# Creates a prediction based on an averaged model set
+# Predicts on one variable, while keeping the others stable as their mean
+# If xminmax is NA, take from original data range, otherwise feed vector
+predictAveraged <- function(
+  modelset, df, predictor, xminmax =NA, group = NULL,  ...
+) {
+  
+  nseq <- function(x, len = length(x)) seq(min(x, na.rm = TRUE),
+                                           max(x, na.rm=TRUE), length = len)
+  
+  # New predictors: X1 along the range of original data, other
+  # variables held constant at their means
+  # Suppress warning because of categorical predictors
+  newdata <- suppressWarnings( as.data.frame(lapply(lapply(df, mean), rep, nrow(df) )) )
+  if(any(is.na(xminmax))){
+    newdata[,predictor] <- nseq(df[,predictor], nrow(df))
+  } else {
+    newdata[,predictor] <- seq(from = xminmax[1],to = xminmax[2],length.out = nrow(df))
+  }
+  # Assign a grouping variable if given
+  if(!is.null(group)){
+    newdata[,"LCLU"] <- group  
+  }
+  # Predict
+  if( class(modelset) %in% c("lmerMod","glmerMod") ){
+    averaged.pred = predict(modelset,newdata = newdata,se.fit = T,
+                            re.form=NA, ... )
+  } else if (class(modelset) == "list"){
+    # Assume it is a GAM
+    averaged.pred = predict(modelset$gam, newdata = newdata, se.fit = T, type = "response")
+    
+  }
+  # Also append new scale to list
+  averaged.pred$x <- newdata[,predictor]
+  return(averaged.pred)
+}
+# -------------------------------------------------------- #
+## Format results function
+# Requires lme4 object and a target predictor list for the sample sizes
+# Also specify alpha and main levels
+format.results <- function(mod,pred,kr=F,alpha=0.05,maxlevels=2,adj = "none",...) {
+  # Laod Packages
+  require(sjPlot)
+  # Sec check
+  if(!(class(mod) %in% c("glmerMod","lmerMod","glmmTMB"))) stop("Must be an lme4 or glmmTMB model object!")
+  # Check if predictor is present in formula
+  if(class(mod) %in% c("glmerMod","lmerMod")) if(!all(pred %in% all.vars(mod@call$formula))) stop("Predictor not in formula")
+  if(class(mod) %in% c("glmmTMB")) if(!all(pred %in% all.vars(mod$call$formula))) stop("Predictor not in formula")
+  
+  if(class(mod) %in% c("glmmTMB")) {frame = mod$frame} else {frame = mod@frame}
+  if(class(mod) %in% c("glmmTMB")) {form = mod$call$formula} else {form = mod@call$formula}
+  
+  # Results
+  df = sjPlot::get_model_data(mod,type = 'est',transform = "exp",show.intercept=TRUE)
+  #df = sjPlot::sjp.glmer(mod,type = "fe",prnt.plot=F,fade.ns=T,show.intercept = T,kr=kr)$data
+  # Assemble the min/max standard e
+  df$se.low = (df$estimate - df$std.error) #exp(fixef(mod)  - se.fixef(mod) )
+  df$se.high = (df$estimate + df$std.error) #exp(fixef(mod)  + se.fixef(mod) )
+  df[which(df$term == "(Intercept)"),c("estimate",'std.error',"conf.low","conf.high","se.low","se.high","p.label")] <- 1 # Overwrite intercept
+  # Sample sizes
+  df$nSS <- length(unique(frame$SS))
+  if(length(pred)==1){
+    df$nSSBS <- as.numeric( table(frame[[pred]]) )
+  } else if(length(pred) == 2){
+    resp <- all.vars(form)[1]
+    predp <- paste0("interaction(",pred[1],", ",pred[2],")")
+    df$nSSBS <- as.numeric( table(frame[[predp]][which(!is.na(frame[[resp]]))])  )
+  }
+  
+  # Calculate corrected p-values
+  require(multcomp)
+  require(lsmeans)
+  df$p.value2 <- NA
+  df$fade2 <- NA
+  if(length(pred)==1){
+    try(pw.test <- summary(glht(mod, lsm(as.formula(paste0("pairwise ~ ",pred))),test = adjusted(adj)) ) ,silent = TRUE) 
+    if(exists("pw.test")){
+      # The first n entries should be the comparison between the base level
+      # So get 1 (intercept) and the calcualted contrasts
+      # names(te$test$sigma)
+      df$p.value2 <- c(1, as.numeric(pw.test$test$pvalues)[ seq(1,maxlevels) ] )
+    }
+  } else if(length(pred) == 2){
+    predp <- paste0(pred[1], " | ", pred[2])
+    
+    # Same as above
+    try( pw.test <- summary(glht(mod, lsm( as.formula(paste0("pairwise ~ ",predp ))  ),test = adjusted(adj)) ),silent=TRUE)  
+    if(exists("pw.test")){
+      
+      df$p.value2 <- unlist(     
+        lapply(pw.test,FUN =  function(x) {
+          return( 
+            c(1, as.numeric(x$test$pvalues)[ seq(1,maxlevels) ] )
+          ) }
+        ) )
+    }
+    
+  }
+  # Correct new fade
+  df$fade <- ifelse(df$p.value > alpha,TRUE,FALSE)
+  df$fade2 <- ifelse(df$p.value2 > alpha,TRUE,FALSE)
+  # Correct significance for intercept
+  df$p.stars[which(df$term=="(Intercept)")] <- ""
+  return(df)
+}
+
+# Create a sequence of a value from min to max
+nseq <- function(x, len = length(x)) seq(min(x, na.rm = TRUE),
+                                         max(x, na.rm=TRUE), length = len)
+
+
+# Relative function to relative effects
+calcRelative <- function(d,var = "BinMagn",ref="ND",trans = c("fit")) {
+  ref.d = d[which(d[[var]]==ref),]
+  ref.t = data.frame()
+  # Stop if number of estimates are different
+  for(le in unique(d[[var]]) ){
+    if(le == ref) next() # Skip if reference
+    sub <- d[which(d[[var]]==le),]
+    stopifnot(nrow(ref.d) == nrow(sub))
+    # Set to fit if it should be transformed to only the effect
+    sub[,c("fit","lower","upper")] <- (sub[,c("fit","lower","upper")] / ref.d[,trans] )
+    ref.t <- rbind(ref.t,sub)
+  }
+  return(ref.t)
+}
+
+
+# Function to test for overdispersion in any model
+#
+# source: https://stat.ethz.ch/pipermail/r-sig-mixed-models/2011q1/015392.html
+dispersion_glmer <- function(modelglmer){
+  # computing  estimated scale  ( binomial model) following  D. Bates :
+  # That quantity is the square root of the penalized residual sum of
+  # squares divided by n, the number of observations, evaluated as:
+  n <- length(resid(modelglmer))
+  return(  sqrt( sum(c(resid(modelglmer),modelglmer@u) ^2) / n ) ) 
+} 
+
+vif.mer <- function (fit) {
+  ## adapted from rms::vif
+  
+  v <- vcov(fit)
+  nam <- names(fixef(fit))
+  
+  ## exclude intercepts
+  ns <- sum(1 * (nam == "Intercept" | nam == "(Intercept)"))
+  if (ns > 0) {
+    v <- v[-(1:ns), -(1:ns), drop = FALSE]
+    nam <- nam[-(1:ns)]
+  }
+  
+  d <- diag(v)^0.5
+  v <- diag(solve(v/(d %o% d)))
+  names(v) <- nam
+  v
+}
+
+overdisp_fun <- function(model) {
+  ## number of variance parameters in 
+  ##   an n-by-n variance-covariance matrix
+  vpars <- function(m) {
+    nrow(m)*(nrow(m)+1)/2
+  }
+  model.df <- sum(sapply(VarCorr(model),vpars))+length(fixef(model))
+  rdf <- nrow(model.frame(model))-model.df
+  rp <- residuals(model,type="pearson")
+  Pearson.chisq <- sum(rp^2)
+  prat <- Pearson.chisq/rdf
+  pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
+  c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
+}

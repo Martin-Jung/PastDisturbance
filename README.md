@@ -39,4 +39,4 @@ The PREDICTS biodiversity data is available under a  CC-BY-4.0 license.
 
 Please contact the author of the manuscript 
 
-<To be inserted>
+*To be inserted*
