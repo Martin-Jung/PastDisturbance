@@ -244,13 +244,13 @@ sites <- d
 rm(d)
 myLog("Preperation of PREDICTS done!")
 myLog("-----------------------------")
-saveRDS(sites,"PREDICTS_allsites.rds")
+saveRDS(sites,"resSaves/PREDICTS_allsites.rds")
 
 #### Generating site-based point grids ####
 # This 
 source('https://raw.githubusercontent.com/Martin-Jung/Icarus/master/R/miscellaneous/latlong2UTMzone.R')
 library(rgeos)
-sites <- readRDS("PREDICTS_allsites.rds")
+sites <- readRDS("resSaves/PREDICTS_allsites.rds")
 myLog("Creating site based point grid...")
 sp = subset(sites,select = c("SS","SSBS","Longitude","Latitude","Max_linear_extent"))
 
@@ -269,7 +269,7 @@ for(site in unique(sp$SSBS)){
   # Transform to a metric meter based projection
   sub.site <- spTransform(sub.site,CRSobj = zone )
   
-  buf <- gBuffer(sub.site,width = sub.site$Max_linear_extent / 2,quadsegs = 50)  
+  buf <- gEnvelope( gBuffer(sub.site,width = sub.site$Max_linear_extent / 2 ,quadsegs = 50)  )
   # Backtransform
   buf <- spTransform(buf,CRSobj = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") )
   buf@polygons[[1]]@ID <- site
@@ -278,101 +278,7 @@ for(site in unique(sp$SSBS)){
 stopifnot(nrow(sp) == length(sp.long))
 joined <- do.call(rbind,sp.long)
 jdata = SpatialPolygonsDataFrame(Sr = joined, data = as.data.frame(sp),match.ID = FALSE)
-writeOGR(jdata,"PREDICTS_RadialBuffers.kml","PREDICTS_RadialBuffers",driver = "KML",overwrite_layer = T)
+writeOGR(jdata,"PREDICTS_Buffers.kml","PREDICTS_Buffers",driver = "KML",overwrite_layer = T)
 # Also write jdata as shapefile while we at it.
-writeOGR(jdata,"PREDICTS_RadialBuffers.shp","PREDICTS_RadialBuffers",driver = "ESRI Shapefile",overwrite_layer = T)
+writeOGR(jdata,"PREDICTS_Buffers.shp","PREDICTS_Buffers",driver = "ESRI Shapefile",overwrite_layer = T)
 rm(joined,jdata,sp.long);gc(verbose = T)
-
-## According to http://landsat.usgs.gov/band_designations_landsat_satellites.php ##
-## with few exceptions all Landsat 4-8 bands are at 30m resolution ## 
-cs = 30 # Resolution
-co = 101 # Cut off
-sp.long = list()
-
-# Make a site based point identifier #
-# The encoding will be increasing string with p%i where %i = i++
-sp$SSBSp <- NA
-# If extent is smaller than demandend extent, take given coordinate only
-#sp$SSBSp[which(sp$Max_linear_extent <= cs )] <- paste0("p",1)
-
-# The offset at both ends of a rectangular buffer increases by two at both ends
-# If multiplied with the cellsize that gives me 
-x = seq(from=1,to = co,by = 2)
-# Remove studies greater than x times 30 of the cutoff
-sp <- subset(sp,Max_linear_extent < (max(x) * 30))
-# For each size
-for(ext in x ){
-  # Get all those sites that fall within the given zone
-  sub <- subset(sp,Max_linear_extent <= (ext*cs) & Max_linear_extent > ((ext-2)*cs) )
-  # Now for each site SSBS
-  for(site in unique(sub$SSBS)){
-    myLog("Processing ",site, " - ",ext)
-    sub.site <- subset(sub,SSBS == site)
-    # Get UTM zone projection
-    zone = CRS(paste0("+proj=utm +zone=",latlong2UTMzone(lon = sub.site$Longitude,lat = sub.site$Latitude )," +datum=WGS84 +units=m +no_defs"))
-    
-    # Make spatial file
-    coordinates(sub.site) <- ~Longitude+Latitude
-    proj4string(sub.site) <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
-    
-    # Transform to a metric meter based projection
-    sub.site <- spTransform(sub.site,CRSobj = zone )
-    
-    #define the plot boundaries based upon the plot radius. 
-    #NOTE: this assumes that plots are oriented North and are not rotated. 
-    yPlus <- sub.site@coords[2]+ (ext*cs)/2
-    xPlus <- sub.site@coords[1]+ (ext*cs)/2
-    yMinus <- sub.site@coords[2]- (ext*cs)/2
-    xMinus <- sub.site@coords[1]- (ext*cs)/2
-    
-    # Calculate a square
-    square = cbind(xMinus,yPlus, xPlus,yPlus, xPlus,yMinus, xMinus,yMinus,xMinus,yPlus,xMinus,yPlus) 
-    
-    # Create spatial polygons out of square
-    polys <- SpatialPolygons(mapply(function(poly, id) {
-      xy <- matrix(poly, ncol=2, byrow=TRUE)
-      Polygons(list(Polygon(xy)), ID=sub.site$SSBS)
-    }, split(square, row(square)), sub.site$SSBS),proj4string=zone) 
-    
-      # Get data to polygon and insert into list
-      o <- spTransform(polys,CRSobj = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
-      od <- as.data.frame(sub.site) %>% mutate(zone=latlong2UTMzone(lon = coordinates(o)[1],lat = coordinates(o)[2] ) ) %>% 
-        rename(x = Longitude, y = Latitude) %>% 
-        # Correct coordinates to long,lat
-        mutate(Longitude = coordinates(o)[1], Latitude = coordinates(o)[2])
-      row.names(od) <- od$SSBS
-      sp.long[[sub.site$SSBS]] <- SpatialPolygonsDataFrame(o,data = od)
-      rm(o,od,polys)
-  }
-}
-# Control check
-stopifnot(length(sp.long)==nrow(sp))
-print("Done!");rm(x)
-
-# Now join back the multiple polygons
-joined = SpatialPolygons(lapply(sp.long, function(x){x@polygons[[1]]}),proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
-jdata = SpatialPolygonsDataFrame(Sr=joined, data=do.call(rbind,(lapply(sp.long,as.data.frame))),match.ID = FALSE)
-
-# Finally write result to KML
-library(rgdal)
-writeOGR(jdata,"PREDICTS_ExtentPolygons.kml","PREDICTS_ExtentPolygons",driver = "KML",overwrite_layer = T)
-# Also write jdata as shapefile while we at it.
-writeOGR(jdata,"PREDICTS_ExtentPolygons.shp","PREDICTS_ExtentPolygons",driver = "ESRI Shapefile",overwrite_layer = T)
-print("Finished exporting! Full Done!")
-
-### Export again ###
-library(rgdal)
-sp <- readOGR(".","PREDICTS_ExtentPolygons")
-
-library(plotKML)
-plotKML(sp, filename = " /PREDICTS_ExtentPolygons.kml")
-
-# FROM ABOVE
-# Save center coordiates rather than extents
-library(plotKML)
-library(rgdal)
-coordinates(sp) <- ~Longitude+Latitude
-proj4string(sp) <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
-writeOGR(sp," PREDICTS_CenterPoints.kml","PREDICTS_CenterPoints",driver = "KML",overwrite_layer = T)
-
-plotKML(sp, filename = " PREDICTS_CenterPoints.kml")
