@@ -39,7 +39,9 @@ o %>% dplyr::filter(Break_direction == "N") %>% dplyr::summarise(m = median(larg
 o %>% dplyr::filter(Break_direction == "P") %>% dplyr::summarise(m = median(largest_mag_prop*100,na.rm=T),s = mad(largest_mag_prop*100,na.rm = T))
 
 # Trend difference
-o$trendchange <- trendchange
+before = out$largest_trendbef*12
+after = out$largest_trendaft*12
+o$trendchange <- (after-before)
 o$Trendchange_direction = ifelse(o$trendchange < 0,"N","P");o$Trendchange_direction[which(is.na(o$trendchange))] <- "S"
 o$Trendchange_direction <- factor(o$Trendchange_direction,c("S","N","P"))
 table(o$Trendchange_direction)[2:3]/(sum(table(o$Trendchange_direction)[2:3]) )
@@ -93,7 +95,9 @@ library(glmmTMB);library(sjPlot)
 options(na.action = "na.exclude")
 
 o <- out
-o$trendchange <- trendchange
+before = out$largest_trendbef*12
+after = out$largest_trendaft*12
+o$trendchange <- (after-before)
 o$Trendchange_direction = ifelse(o$trendchange < 0,"N","P");o$Trendchange_direction[which(is.na(o$trendchange))] <- "ND"
 o$Trendchange_direction <- factor(o$Trendchange_direction,c("ND","N","P"))
 o$Break_binom <- factor(o$Break_binom,labels = c("ND","D"))
@@ -335,7 +339,9 @@ format.results(piefit.overall,"BinTime",maxlevels = 3)[,'p.value'][2]
 # ---- #
 o <- out
 # Filter only to extremes for both 
-o$trendchange <- trendchange
+before = out$largest_trendbef*12
+after = out$largest_trendaft*12
+o$trendchange <- (after-before)
 o$Trendchange_direction = ifelse(o$trendchange < 0,"N","P");o$Trendchange_direction[which(is.na(o$trendchange))] <- "S"
 o$Trendchange_direction <- factor(o$Trendchange_direction,c("S","N","P"))
 o$Inter <- interaction(o$Break_direction,o$Trendchange_direction)
@@ -492,6 +498,9 @@ pg = cowplot::plot_grid(g1 + scale_y_continuous(limits = c(-28,7)) ,# + theme(ax
 pg
 cowplot::ggsave("newFigures/F1Overall_1and2.png",plot=pg,width = 11,height = 9)
 
+# Data for export
+Figure2_part1 <- full.magnitude
+Figure2_part2 <- full.time
 
 # ------------------------ #
 # Diagnostic. Number per Bin and Metric
@@ -684,6 +693,8 @@ out_d$B <- fct_recode(out_d$B, "UC" = "ND")
 
 # Convert to matrix
 m <- reshape2::acast(out_d,A~B,value.var = "avg")
+# Save for Output
+Figure3_part1 <- m
 
 hc <- hclust(dist(m,"man"),method = "complete");plot(hc)
 # Reshuffle 
@@ -796,6 +807,8 @@ out_d$B <- fct_recode(out_d$B, "UC" = "ND")
 
 # Convert to matrix
 m <- reshape2::acast(out_d,A~B,value.var = "avg",fun.aggregate = mean)
+# Save for output
+Figure3_part2 <- m
 
 m2 <- m
 colnames(m2) <- c(">10 ","5-10 ","\U2264 5 ","UC", "\U2264 5", "5-10", ">10")
@@ -1067,7 +1080,9 @@ ggsave("SF3_SorGrid_TimeDir_Trend.png",plot=gd,width=5,height=5)
 assign("last.warning", NULL, envir = baseenv())
 o <- out
 # Filter only to extremes for both 
-o$trendchange <- trendchange
+before = out$largest_trendbef*12
+after = out$largest_trendaft*12
+o$trendchange <- (after-before)
 o$Trendchange_direction = ifelse(o$trendchange < 0,"N","P");o$Trendchange_direction[which(is.na(o$trendchange))] <- "S"
 o$Trendchange_direction <- factor(o$Trendchange_direction,c("S","N","P"))
 o$Inter <- interaction(o$Break_direction,o$Trendchange_direction)
@@ -1152,6 +1167,9 @@ full$nSS.y <- rep(c(-42,-42,-32,-32,-17,-17), length.out =nrow(full))
 # For reordering directions
 full$Type_term <- factor(full$Type_term,c("Magnitude <","Trend <","Magnitude >","Trend >"))
 
+# Save data for export
+Figure4 <- full
+
 # Plot - Barplot colored by tax. group
 gB <- ggplot(full,
              aes(x=TGrouping,y=estimate, ymin=se.low, ymax=se.high,group=Type_term,fill=Type_term,shape=Type,color=term) ) + 
@@ -1181,7 +1199,17 @@ gB <- ggplot(full,
   # Add Y -axis again
   theme(axis.line.y = element_line(size = .5)) 
 gB
-ggplot2::ggsave("Figure4.png",plot = gB,width = 21,height = 21,units = "cm",dpi = 400)
+ggplot2::ggsave("Figure4.png",plot = gB,width = 21,height = 23,units = "cm",dpi = 400)
+
+
+#### Data export for repository ####
+full_data <- o
+save(full_data,
+     Figure2_part1,Figure2_part2,
+     Figure3_part1,Figure3_part2,
+     Figure4,
+     file = 'C:/Users/Martin/PhD/Projects/P5_MagnitudeBreakpoints/writeup/Submission/revision_nr2/final/SupportingData.RData')
+
 
 
 #### Figure 1  ####
