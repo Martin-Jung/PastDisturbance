@@ -730,7 +730,7 @@ gd <- reshape2::melt(m2) %>% subset(.,complete.cases(.)) %>%
                               inherit.aes = F,size=5,color = m.lab.col,fontface = "bold") ) +
   scale_fill_gradient2(low = "#601200", mid = "white",high = "#001260",
                        na.value = "white",midpoint = 0,breaks = pretty_breaks(5),
-                       guide = guide_colorbar(title = "",title.position="top",
+                       guide = guide_colorbar(title = "Sørensen similarity index",title.position="top",title.hjust = .5,title.theme = element_text(size=16),
                                               direction = "horizontal",nbin=100,ticks = FALSE, barwidth = 18, barheight = 1)) +
   guides(color="none") + theme(legend.position = "bottom") +
   scale_x_discrete(position = "top") +
@@ -853,7 +853,7 @@ gd <- reshape2::melt(m2) %>% subset(.,complete.cases(.)) %>%
   suppressWarnings( geom_text(data=reshape2::melt(m.lab),aes(x=Var1,y=Var2,label=value),inherit.aes = F,size=5,color = m.lab.col,fontface = "bold") ) +
   scale_fill_gradient2(low = "#601200", mid = "white",high = "#001260",
                        na.value = "white",midpoint = 0,breaks = pretty_breaks(5),
-                       guide = guide_colorbar(title = "",title.position="top",
+                       guide = guide_colorbar(title = "Sørensen similarity index",title.position="top",title.hjust = .5,title.theme = element_text(size=16),
                                               direction = "horizontal",nbin=100,ticks = FALSE, barwidth = 18, barheight = 1)) +
   guides(color="none") + theme(legend.position = "bottom") +
   scale_x_discrete(position = "top") +
@@ -862,7 +862,7 @@ gd <- reshape2::melt(m2) %>% subset(.,complete.cases(.)) %>%
   theme(axis.text.x = element_text(colour = cols) ) + theme(axis.text.y = element_text(colour = rev(cols)) ) +
   theme(legend.margin=margin(t = -.75, unit='cm'))#  theme(legend.margin=margin(t=0, r=0, b=0, l=0, unit="cm"))
 gd
-ggsave("F3_SorGrid_TimeDir.png",plot=gd+ theme(plot.margin=unit(c(0,0,0,0), "mm")),width=6,height=6)
+ggsave("F3_SorGrid_TimeDir.png",plot=gd+ theme(plot.margin=unit(c(0,0,0,0), "mm")),width=6,height=6,dpi = 300)
 
 # ------------------------------ #
 # Alternative with post-disturbance trend (SI)

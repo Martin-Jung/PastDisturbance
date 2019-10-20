@@ -1,10 +1,13 @@
 library(tidyverse)
+library(xts)
+source('000_HelperFunction.R')
+
 # Load prepared sites data
 sites <- readRDS("resSaves/PREDICTS_allsites.rds")
 # Correct for certain issues and remove problematic studies
 # A wrong classified study
 sites$TGrouping[which(sites$SS == "DL1_2008__MacipRios 1" )] <- "Reptilia"
-sites <- subset(sites, SS %!in% c("DL1_2012__CalvinoCancela 1","DL1_2012__CalvinoCancela 2") ) # Remove that one problematic study
+sites <- subset(sites, !SS %in% c("DL1_2012__CalvinoCancela 1","DL1_2012__CalvinoCancela 2") ) # Remove that one problematic study
 sites <- subset(sites, Max_linear_extent <= 3000) #Remove sites with  very large extents
 
 # Metrics
@@ -54,7 +57,7 @@ res_ls_bfast$SS <- sites$SS[match(res_ls_bfast$SSBS,sites$SSBS)]
 # Remove those which HDVe to large sampling extent and where removed earlier
 res_ls_bfast <- res_ls_bfast[which(!is.na(res_ls_bfast$SS)),]
 # Merge back into sites and clean up
-out <- merge.data.frame(sites,res_ls_bfast ,by = c("SS","SSBS"),all = TRUE) %>% mutate(Sat = "Landsat")
+out <- merge.data.frame(sites,res_ls_bfast, by = c("SS","SSBS"),all = TRUE) %>% mutate(Sat = "Landsat")
 # Filter out those studies that had no detected break among all their sites
 tSS <- out %>% dplyr::group_by(SS) %>% dplyr::summarise( BPS = length(which(Break==1)) ) %>% 
   dplyr::filter(BPS > 0 ) %>% dplyr::select(SS) %>% distinct()
